@@ -6,6 +6,8 @@ import swaggerUI from '@fastify/swagger-ui';
 import { ZodError } from 'zod';
 import { registerRoutes } from './routes/index.js';
 import { config } from './config.js';
+import fs from 'fs';
+import path from 'path';
 
 export default async function buildServer() {
   const app = Fastify({ logger: true });
@@ -18,10 +20,11 @@ export default async function buildServer() {
     secret: config.jwtSecret
   });
 
-  await app.register(swagger, {
-    openapi: {
-      info: { title: 'Ecommerce API', version: '1.0.0' }
-    }
+  const specPath = path.join(process.cwd(), 'openapi.yaml');
+  const openapi = fs.existsSync(specPath) ? fs.readFileSync(specPath, 'utf8') : undefined;
+
+  await app.register(swagger, openapi ? { specification: { path: specPath } } : {
+    openapi: { info: { title: 'Ecommerce API', version: '1.0.0' } }
   });
   await app.register(swaggerUI, {
     routePrefix: '/docs',

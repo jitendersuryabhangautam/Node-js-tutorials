@@ -1,0 +1,671 @@
+openapi: 3.0.3
+info:
+  title: Ecommerce Backend API
+  version: 1.0.0
+  description: Full API documentation generated from current routes.
+servers:
+  - url: http://localhost:8080
+    description: Local development
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string, nullable: true }
+        data: { nullable: true }
+        error: { type: string, nullable: true }
+        errors: { nullable: true }
+      required: [success]
+    PaginationMeta:
+      type: object
+      properties:
+        page: { type: integer, minimum: 1 }
+        limit: { type: integer, minimum: 1, maximum: 100 }
+        total: { type: integer, minimum: 0 }
+        totalPages: { type: integer, minimum: 0 }
+      required: [page, limit, total, totalPages]
+    User:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        email: { type: string, format: email }
+        first_name: { type: string }
+        last_name: { type: string }
+        role: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        sku: { type: string }
+        name: { type: string }
+        description: { type: string }
+        price: { type: number }
+        stock: { type: integer }
+        category: { type: string }
+        image_url: { type: string }
+        created_at: { type: string, format: date-time }
+    CartItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cart_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        product: { $ref: '#/components/schemas/Product' }
+        quantity: { type: integer }
+        created_at: { type: string, format: date-time }
+    Cart:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/CartItem' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Address:
+      type: object
+      properties:
+        full_name: { type: string }
+        street: { type: string }
+        city: { type: string }
+        state: { type: string }
+        country: { type: string }
+        postal_code: { type: string }
+        phone: { type: string }
+    OrderItem:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        order_id: { type: string, format: uuid }
+        product_id: { type: string, format: uuid }
+        product: { $ref: '#/components/schemas/Product' }
+        quantity: { type: integer }
+        price_at_time: { type: number }
+        created_at: { type: string, format: date-time }
+    Order:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        order_number: { type: string }
+        total_amount: { type: number }
+        status: { type: string }
+        payment_method: { type: string }
+        shipping_address: { $ref: '#/components/schemas/Address' }
+        billing_address: { $ref: '#/components/schemas/Address' }
+        items:
+          type: array
+          items: { $ref: '#/components/schemas/OrderItem' }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Payment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        order_id: { type: string, format: uuid }
+        amount: { type: number }
+        status: { type: string }
+        payment_method: { type: string }
+        transaction_id: { type: string }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+    Return:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        order_id: { type: string, format: uuid }
+        user_id: { type: string, format: uuid }
+        reason: { type: string }
+        status: { type: string }
+        refund_amount: { type: number }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+paths:
+  /api/v1/health:
+    get:
+      tags: [Health]
+      summary: Health check
+      responses:
+        '200': { description: OK, content: { application/json: { example: { success: true, data: { status: ok } } } } }
+  /api/v1/ready:
+    get:
+      tags: [Health]
+      summary: Readiness check
+      responses:
+        '200': { description: Ready, content: { application/json: { example: { success: true, data: { status: ready } } } } }
+        '503': { description: Not ready, content: { application/json: { example: { success: false, message: Not ready } } } }
+  /api/v1/metrics:
+    get:
+      tags: [Health]
+      summary: Metrics
+      responses:
+        '200': { description: Metrics, content: { application/json: { example: { success: true, data: { status: ok, uptime_seconds: 123 } } } } }
+
+  /api/v1/auth/register:
+    post:
+      tags: [Auth]
+      summary: Register user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { email: customer@example.com, password: password123, first_name: John, last_name: Doe }
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              example: { success: true, data: { user: { id: USER_ID, email: customer@example.com, first_name: John, last_name: Doe, role: customer, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" }, access_token: JWT_TOKEN } }
+  /api/v1/auth/login:
+    post:
+      tags: [Auth]
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { email: customer@example.com, password: password123 }
+      responses:
+        '200':
+          description: Logged in
+          content:
+            application/json:
+              example: { success: true, data: { user: { id: USER_ID, email: customer@example.com, first_name: John, last_name: Doe, role: customer, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" }, access_token: JWT_TOKEN } }
+  /api/v1/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { refresh_token: REFRESH_TOKEN }
+      responses:
+        '200':
+          description: Refreshed
+          content:
+            application/json:
+              example: { success: true, data: { access_token: NEW_JWT } }
+
+  /api/v1/users/profile:
+    get:
+      tags: [Users]
+      summary: Get profile
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: Profile, content: { application/json: { example: { success: true, data: { id: USER_ID, email: user@example.com, first_name: John, last_name: Doe, role: customer, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+    put:
+      tags: [Users]
+      summary: Update profile
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { first_name: John, last_name: Doe, email: new@example.com }
+      responses:
+        '200': { description: Updated, content: { application/json: { example: { success: true, data: { id: USER_ID, email: new@example.com, first_name: John, last_name: Doe, role: customer, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+  /api/v1/users/change-password:
+    put:
+      tags: [Users]
+      summary: Change password
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { current_password: password123, new_password: newpass123 }
+      responses:
+        '200': { description: Changed, content: { application/json: { example: { success: true, data: null, message: Password changed } } } }
+
+  /api/v1/products:
+    get:
+      tags: [Products]
+      summary: List products
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: category
+          schema: { type: string }
+        - in: query
+          name: search
+          schema: { type: string }
+      responses:
+        '200': { description: Products list, content: { application/json: { example: { success: true, data: { products: [ { id: PRODUCT_ID, name: Product Name, sku: ELE-123, category: Electronics, price: 299.99, stock: 12, image_url: https://..., description: ..., created_at: "2026-02-05T10:00:00Z" } ], meta: { page: 1, limit: 10, total: 200, totalPages: 20 } } } } } }
+  /api/v1/products/{id}:
+    get:
+      tags: [Products]
+      summary: Get product
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Product, content: { application/json: { example: { success: true, data: { id: PRODUCT_ID, name: Product Name, sku: ELE-123, category: Electronics, price: 299.99, stock: 12, image_url: https://..., description: ..., created_at: "2026-02-05T10:00:00Z" } } } } }
+
+  /api/v1/cart:
+    get:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Get cart
+      responses:
+        '200': { description: Cart, content: { application/json: { example: { success: true, data: { id: CART_ID, user_id: USER_ID, items: [], created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+    delete:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Clear cart
+      responses:
+        '200': { description: Cleared, content: { application/json: { example: { success: true, data: null } } } }
+  /api/v1/cart/validate:
+    get:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Validate cart
+      responses:
+        '200': { description: Valid, content: { application/json: { example: { success: true, data: { valid: true, cart: { id: CART_ID, user_id: USER_ID, items: [], created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } } }
+        '409': { description: Invalid, content: { application/json: { example: { success: false, data: { valid: false, errors: ["Insufficient stock"] } } } } }
+  /api/v1/cart/items:
+    post:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Add item
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { product_id: PRODUCT_ID, quantity: 2 }
+      responses:
+        '201': { description: Added, content: { application/json: { example: { success: true, data: { id: CART_ID, user_id: USER_ID, items: [ { id: ITEM_ID, product_id: PRODUCT_ID, quantity: 2 } ], created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+  /api/v1/cart/items/{itemId}:
+    put:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Update item
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { quantity: 3 }
+      responses:
+        '200': { description: Updated, content: { application/json: { example: { success: true, data: { id: CART_ID, user_id: USER_ID, items: [ { id: ITEM_ID, product_id: PRODUCT_ID, quantity: 3 } ], created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+    delete:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Remove item
+      parameters:
+        - in: path
+          name: itemId
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Removed, content: { application/json: { example: { success: true, data: { id: CART_ID, user_id: USER_ID, items: [], created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:00:00Z" } } } } }
+
+  /api/v1/orders:
+    post:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Create order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example:
+              shipping_address: { full_name: John Doe, street: 123 Main St, city: New York, state: NY, country: USA, postal_code: 10001, phone: +1234567890 }
+              billing_address: { full_name: John Doe, street: 123 Main St, city: New York, state: NY, country: USA, postal_code: 10001, phone: +1234567890 }
+              payment_method: cc
+      responses:
+        '201': { description: Created, content: { application/json: { example: { success: true, data: { id: ORDER_ID, order_number: ORD-123, user_id: USER_ID, total_amount: 199.99, status: pending, payment_method: cc, created_at: "2026-02-05T10:00:00Z" } } } } }
+    get:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: List orders
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        '200': { description: Orders list, content: { application/json: { example: { success: true, data: { orders: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } } } } } }
+  /api/v1/orders/{id}:
+    get:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Get order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Order, content: { application/json: { example: { success: true, data: { id: ORDER_ID, order_number: ORD-123, user_id: USER_ID, total_amount: 199.99, status: pending, created_at: "2026-02-05T10:00:00Z" } } } } }
+  /api/v1/orders/{id}/cancel:
+    put:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Cancel order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Cancelled, content: { application/json: { example: { success: true, data: { id: ORDER_ID, status: cancelled } } } } }
+  /api/v1/orders/{id}/payment:
+    get:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Get payment by order
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Payment, content: { application/json: { example: { success: true, data: { id: PAYMENT_ID, order_id: ORDER_ID, amount: 199.99, status: completed, payment_method: cc } } } } }
+
+  /api/v1/payments:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Create payment
+      requestBody:
+        required: false
+        content:
+          application/json:
+            example: { order_id: ORDER_ID, payment_method: cc }
+      responses:
+        '201': { description: Created, content: { application/json: { example: { success: true, data: { id: PAYMENT_ID, order_id: ORDER_ID, amount: 199.99, status: completed, payment_method: cc } } } } }
+  /api/v1/payments/{id}/verify:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Verify payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { payment_id: PAYMENT_ID, transaction_id: TXN-12345 }
+      responses:
+        '200': { description: Verified, content: { application/json: { example: { success: true, data: { id: PAYMENT_ID, status: completed, transaction_id: TXN-12345 } } } } }
+
+  /api/v1/returns:
+    post:
+      tags: [Returns]
+      security: [{ bearerAuth: [] }]
+      summary: Create return
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { order_id: ORDER_ID, reason: Product damaged }
+      responses:
+        '201': { description: Created, content: { application/json: { example: { success: true, data: { id: RETURN_ID, order_id: ORDER_ID, status: requested } } } } }
+    get:
+      tags: [Returns]
+      security: [{ bearerAuth: [] }]
+      summary: List returns
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+      responses:
+        '200': { description: Returns list, content: { application/json: { example: { success: true, data: { returns: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } } } } } }
+  /api/v1/returns/{id}:
+    get:
+      tags: [Returns]
+      security: [{ bearerAuth: [] }]
+      summary: Get return
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Return, content: { application/json: { example: { success: true, data: { id: RETURN_ID, order_id: ORDER_ID, status: requested } } } } }
+
+  /api/v1/admin/products:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: List products (admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Products list, content: { application/json: { example: { success: true, data: { products: [ { id: PRODUCT_ID, name: Product Name, sku: ELE-123, category: Electronics, price: 299.99, stock: 12, image_url: https://..., description: ..., created_at: "2026-02-05T10:00:00Z" } ], meta: { page: 1, limit: 10, total: 200, totalPages: 20 } } } } } }
+    post:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Create product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { sku: LAP-002, name: Premium Gaming Laptop, description: High-end gaming laptop, price: 2499.99, stock: 15, category: Electronics, image_url: https://example.com/laptop2.jpg }
+      responses:
+        '201': { description: Created, content: { application/json: { example: { success: true, data: { id: PRODUCT_ID, sku: LAP-002, name: Premium Gaming Laptop, price: 2499.99, stock: 15 } } } } }
+  /api/v1/admin/products/{id}:
+    put:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Update product
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { name: Updated Product Name, price: 1999.99, stock: 20 }
+      responses:
+        '200': { description: Updated, content: { application/json: { example: { success: true, data: { id: PRODUCT_ID, name: Updated Product Name, price: 1999.99, stock: 20 } } } } }
+    delete:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Delete product
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Deleted, content: { application/json: { example: { success: true, data: null } } } }
+
+  /api/v1/admin/orders:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: List orders (admin)
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Orders list, content: { application/json: { example: { success: true, data: { orders: [ { id: ORDER_ID, order_number: ORD-123, user_id: USER_ID, user: { id: USER_ID, email: user@example.com }, total_amount: 199.99, status: pending, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:30:00Z", items: [ { product_id: PRODUCT_ID, quantity: 2 } ] } ], meta: { page: 1, limit: 10, total: 120, totalPages: 12 } } } } } }
+  /api/v1/admin/orders/{id}:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Get order (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      responses:
+        '200': { description: Order, content: { application/json: { example: { success: true, data: { id: ORDER_ID, order_number: ORD-123, user_id: USER_ID, total_amount: 199.99, status: pending } } } } }
+  /api/v1/admin/orders/{id}/status:
+    put:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Update order status
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { status: shipped }
+      responses:
+        '200': { description: Updated, content: { application/json: { example: { success: true, data: { id: ORDER_ID, status: shipped } } } } }
+  /api/v1/admin/orders/recent:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Recent orders
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Recent orders, content: { application/json: { example: { success: true, data: { limit: 10, orders: [ { id: ORDER_ID, order_number: ORD-123, user_id: USER_ID, user: { id: USER_ID, email: user@example.com }, total_amount: 199.99, status: pending, created_at: "2026-02-05T10:00:00Z" } ] } } } } }
+  /api/v1/admin/analytics:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Analytics
+      parameters:
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Analytics, content: { application/json: { example: { success: true, data: { range_days: 30, totals: { total_revenue: 12345.67, total_orders: 120, total_products: 340, total_customers: 98, avg_order_value: 102.88 }, orders_by_status: [ { status: pending, count: 10 }, { status: processing, count: 20 } ] } } } } }
+  /api/v1/admin/products/top:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Top products
+      parameters:
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Top products, content: { application/json: { example: { success: true, data: { range_days: 30, items: [ { product: { id: PRODUCT_ID, name: Product Name, category: Electronics, price: 299.99, stock: 12, image_url: https://... }, total_quantity: 25, total_revenue: 7499.75 } ] } } } } }
+  /api/v1/admin/users:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: List users
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Users, content: { application/json: { example: { success: true, data: { users: [ { id: USER_ID, email: user@example.com, first_name: John, last_name: Doe, role: customer, created_at: "2026-02-05T10:00:00Z" } ], meta: { page: 1, limit: 10, total: 88, totalPages: 9 } } } } } }
+  /api/v1/admin/users/{id}/role:
+    put:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Update user role
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { role: admin }
+      responses:
+        '200': { description: Updated, content: { application/json: { example: { success: true, data: { id: USER_ID, role: admin } } } } }
+  /api/v1/admin/returns:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: List returns
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer }
+        - in: query
+          name: limit
+          schema: { type: integer }
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: range_days
+          schema: { type: integer }
+      responses:
+        '200': { description: Returns, content: { application/json: { example: { success: true, data: { returns: [ { id: RETURN_ID, order_id: ORDER_ID, order: { order_number: ORD-123 }, user: { id: USER_ID, email: user@example.com }, reason: Damaged, status: requested, refund_amount: 0, created_at: "2026-02-05T10:00:00Z", updated_at: "2026-02-05T10:30:00Z" } ], meta: { page: 1, limit: 10, total: 40, totalPages: 4 } } } } } }
+  /api/v1/admin/returns/{returnId}/process:
+    post:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Process return
+      parameters:
+        - in: path
+          name: returnId
+          required: true
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            example: { status: approved, refund_amount: 149.99 }
+      responses:
+        '200': { description: Processed, content: { application/json: { example: { success: true, data: { id: RETURN_ID, status: approved, refund_amount: 149.99 } } } } }
