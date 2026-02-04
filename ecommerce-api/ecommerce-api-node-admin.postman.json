@@ -1,0 +1,131 @@
+{
+  "info": {
+    "name": "ecommerce-api-node-admin",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Node ecommerce API collection (public, auth, user, cart, orders, payments, returns, admin)"
+  },
+  "variable": [
+    {"key": "base_url", "value": "http://localhost:8080"},
+    {"key": "auth_token", "value": ""},
+    {"key": "admin_token", "value": ""},
+    {"key": "productId", "value": ""},
+    {"key": "orderId", "value": ""},
+    {"key": "cartItemId", "value": ""},
+    {"key": "paymentId", "value": ""},
+    {"key": "returnId", "value": ""},
+    {"key": "userId", "value": ""}
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {"name": "Health", "request": {"method": "GET", "url": "{{base_url}}/api/v1/health"}},
+        {"name": "Ready", "request": {"method": "GET", "url": "{{base_url}}/api/v1/ready"}},
+        {"name": "Metrics", "request": {"method": "GET", "url": "{{base_url}}/api/v1/metrics"}}
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "url": "{{base_url}}/api/v1/auth/register",
+            "body": {"mode":"raw","raw":"{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\",\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\"\n}"}
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "url": "{{base_url}}/api/v1/auth/login",
+            "body": {"mode":"raw","raw":"{\n  \"email\": \"customer@example.com\",\n  \"password\": \"password123\"\n}"}
+          }
+        },
+        {
+          "name": "Refresh",
+          "request": {
+            "method": "POST",
+            "header": [{"key":"Content-Type","value":"application/json"}],
+            "url": "{{base_url}}/api/v1/auth/refresh",
+            "body": {"mode":"raw","raw":"{\n  \"refresh_token\": \"YOUR_REFRESH_TOKEN\"\n}"}
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {"name": "Profile", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/users/profile"}},
+        {"name": "Update Profile", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/users/profile", "body": {"mode":"raw","raw":"{\n  \"first_name\": \"John\",\n  \"last_name\": \"Doe\",\n  \"email\": \"new@example.com\"\n}"}}},
+        {"name": "Change Password", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/users/change-password", "body": {"mode":"raw","raw":"{\n  \"current_password\": \"password123\",\n  \"new_password\": \"newpass123\"\n}"}}}
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {"name": "List Products", "request": {"method": "GET", "url": "{{base_url}}/api/v1/products?page=1&limit=10"}},
+        {"name": "List Products (Filter)", "request": {"method": "GET", "url": "{{base_url}}/api/v1/products?page=1&limit=10&category=Electronics&search=laptop"}},
+        {"name": "Get Product", "request": {"method": "GET", "url": "{{base_url}}/api/v1/products/{{productId}}"}}
+      ]
+    },
+    {
+      "name": "Cart",
+      "item": [
+        {"name": "Get Cart", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/cart"}},
+        {"name": "Validate Cart", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/cart/validate"}},
+        {"name": "Add Item", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/cart/items", "body": {"mode":"raw","raw":"{\n  \"product_id\": \"{{productId}}\",\n  \"quantity\": 2\n}"}}},
+        {"name": "Update Item", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/cart/items/{{cartItemId}}", "body": {"mode":"raw","raw":"{\n  \"quantity\": 3\n}"}}},
+        {"name": "Remove Item", "request": {"method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/cart/items/{{cartItemId}}"}},
+        {"name": "Clear Cart", "request": {"method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/cart"}}
+      ]
+    },
+    {
+      "name": "Orders",
+      "item": [
+        {"name": "Create Order", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/orders", "body": {"mode":"raw","raw":"{\n  \"shipping_address\": {\n    \"full_name\": \"John Doe\",\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"postal_code\": \"10001\",\n    \"phone\": \"+1234567890\"\n  },\n  \"billing_address\": {\n    \"full_name\": \"John Doe\",\n    \"street\": \"123 Main St\",\n    \"city\": \"New York\",\n    \"state\": \"NY\",\n    \"country\": \"USA\",\n    \"postal_code\": \"10001\",\n    \"phone\": \"+1234567890\"\n  },\n  \"payment_method\": \"cc\"\n}"}}},
+        {"name": "List Orders", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/orders?page=1&limit=10"}},
+        {"name": "Get Order", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/orders/{{orderId}}"}},
+        {"name": "Cancel Order", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/orders/{{orderId}}/cancel"}},
+        {"name": "Get Order Payment", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/orders/{{orderId}}/payment"}}
+      ]
+    },
+    {
+      "name": "Payments",
+      "item": [
+        {"name": "Create Payment", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/payments", "body": {"mode":"raw","raw":"{\n  \"order_id\": \"{{orderId}}\",\n  \"payment_method\": \"cc\"\n}"}}},
+        {"name": "Create Payment (Query)", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/payments?order_id={{orderId}}"}},
+        {"name": "Verify Payment", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/payments/{{paymentId}}/verify", "body": {"mode":"raw","raw":"{\n  \"payment_id\": \"{{paymentId}}\",\n  \"transaction_id\": \"TXN-12345\"\n}"}}}
+      ]
+    },
+    {
+      "name": "Returns",
+      "item": [
+        {"name": "Create Return", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/returns", "body": {"mode":"raw","raw":"{\n  \"order_id\": \"{{orderId}}\",\n  \"reason\": \"Product damaged\"\n}"}}},
+        {"name": "List Returns", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/returns?page=1&limit=10"}},
+        {"name": "Get Return", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{auth_token}}"}], "url": "{{base_url}}/api/v1/returns/{{returnId}}"}}
+      ]
+    },
+    {
+      "name": "Admin",
+      "item": [
+        {"name": "Create Product", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/admin/products", "body": {"mode":"raw","raw":"{\n  \"sku\": \"LAP-002\",\n  \"name\": \"Premium Gaming Laptop\",\n  \"description\": \"High-end gaming laptop with RTX 4090\",\n  \"price\": 2499.99,\n  \"stock\": 15,\n  \"category\": \"Electronics\",\n  \"image_url\": \"https://example.com/laptop2.jpg\"\n}"}}},
+        {"name": "Update Product", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/admin/products/{{productId}}", "body": {"mode":"raw","raw":"{\n  \"name\": \"Updated Product Name\",\n  \"price\": 1999.99,\n  \"stock\": 20\n}"}}},
+        {"name": "Delete Product", "request": {"method": "DELETE", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/products/{{productId}}"}},
+        {"name": "List Orders", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/orders?page=1&limit=10&status=pending"}},
+        {"name": "Get Order", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/orders/{{orderId}}"}},
+        {"name": "Update Order Status", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/admin/orders/{{orderId}}/status", "body": {"mode":"raw","raw":"{\n  \"status\": \"shipped\"\n}"}}},
+        {"name": "Recent Orders", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/orders/recent?limit=10"}},
+        {"name": "Analytics", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/analytics?range_days=30"}},
+        {"name": "Top Products", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/products/top?limit=5&range_days=30"}},
+        {"name": "List Users", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/users?page=1&limit=10"}},
+        {"name": "Update User Role", "request": {"method": "PUT", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/admin/users/{{userId}}/role", "body": {"mode":"raw","raw":"{\n  \"role\": \"admin\"\n}"}}},
+        {"name": "List Returns", "request": {"method": "GET", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"}], "url": "{{base_url}}/api/v1/admin/returns?page=1&limit=10&status=requested"}},
+        {"name": "Process Return", "request": {"method": "POST", "header": [{"key":"Authorization","value":"Bearer {{admin_token}}"},{"key":"Content-Type","value":"application/json"}], "url": "{{base_url}}/api/v1/admin/returns/{{returnId}}/process", "body": {"mode":"raw","raw":"{\n  \"status\": \"approved\",\n  \"refund_amount\": 149.99\n}"}}}
+      ]
+    }
+  ]
+}
